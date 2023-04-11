@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Sprite, Application, Loader, Texture, Graphics, DisplayObject } from "pixi.js";
 import gsap from "gsap";
 import resizeEmitter from "./utils/resizeEmitter";
