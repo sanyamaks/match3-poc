@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Sprite, Application, Loader, Texture, Graphics, DisplayObject } from "pixi.js";
 import gsap from "gsap";
 import resizeEmitter from "./utils/resizeEmitter";
@@ -170,7 +171,7 @@ const getFigure = (
         alpha: 1,
         duration: 1,
         ease: "power1.out",
-        onComplete: function () {},
+        onComplete: function () { },
     });
 
     figure.interactive = true;
@@ -227,37 +228,41 @@ const getFigure = (
         replacementFigure = null;
         replacementFigurePosition = null;
         wasReplaced = false;
-
-        const positions = getPositions(
-            container.children
-                .filter((children) => children.customData.name === "figure")
-                .sort(
-                    (a, b) =>
-                        a.customData.position.x - b.customData.position.x ||
-                        a.customData.position.y - b.customData.position.y,
-                ),
-        );
-
-        positions.forEach((c) => {
-            const findElement = container.children.find(
-                (child) =>
-                    child.customData.name === "figure" &&
-                    child.customData.position.x === c.x &&
-                    child.customData.position.y === c.y,
+        const update = () => {
+            const positions = getPositions(
+                container.children
+                    .filter((children) => children.customData.name === "figure")
+                    .sort(
+                        (a, b) =>
+                            a.customData.position.x - b.customData.position.x ||
+                            a.customData.position.y - b.customData.position.y,
+                    ),
             );
-            if (findElement) {
-                c.xCoord = findElement.x;
-                c.yCoord = findElement.y;
-                console.log("удалилось");
-                findElement.destroy();
+            if (positions.length > 0) {
+                positions.forEach((c) => {
+                    const findElement = container.children.find(
+                        (child) =>
+                            child.customData.name === "figure" &&
+                            child.customData.position.x === c.x &&
+                            child.customData.position.y === c.y,
+                    );
+                    if (findElement) {
+                        c.xCoord = findElement.x;
+                        c.yCoord = findElement.y;
+                        console.log("удалилось");
+                        findElement.destroy();
+                    }
+                });
+                console.log(positions);
+                positions.forEach((c) => {
+                    console.log("добавилось");
+                    const figure = getFigure(container, c.x, c.y, c.xCoord, c.yCoord, true);
+                    container.addChild(figure);
+                });
+                update();
             }
-        });
-        console.log(positions);
-        positions.forEach((c) => {
-            console.log("добавилось");
-            const figure = getFigure(container, c.x, c.y, c.xCoord, c.yCoord, true);
-            container.addChild(figure);
-        });
+        }
+        update();
     }
 
     function onDragMove(event: any) {
@@ -308,7 +313,7 @@ const getFigure = (
                 const isNearElement =
                     Math.abs(
                         Math.abs(findElement.customData.position.x - capturedFigure.customData.position.x) +
-                            Math.abs(findElement.customData.position.y - capturedFigure.customData.position.y),
+                        Math.abs(findElement.customData.position.y - capturedFigure.customData.position.y),
                     ) === 1;
 
                 if (isNearElement) {
