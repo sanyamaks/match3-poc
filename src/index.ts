@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Sprite, Application, Loader, Texture, Graphics, DisplayObject } from "pixi.js";
+import { Sprite, Application, Loader, Texture, Graphics, DisplayObject, Container, Text } from "pixi.js";
 import gsap from "gsap";
 import resizeEmitter from "./utils/resizeEmitter";
 import "./style.css";
@@ -9,6 +9,15 @@ const FIGURE_AND_SQUARE_SIZE = 105;
 const FIGURE_AND_SQUARE_SIZE_PADDING = 7;
 const CONTAINER_DIFFERENCE = 219;
 
+const ASSETS = {
+    fish: "./assets/fish.png",
+    star: "./assets/star.png",
+    boat: "./assets/boat.png",
+    mayak: "./assets/mayak.png",
+    container: "./assets/FRAME.png",
+    background: "./assets/video_2023-04-05_00-59-02.mp4",
+};
+
 let capturedFigure: Sprite | null = null;
 let capturedFigurePosition: { x: number; y: number } | null = null;
 let replacementFigure: Sprite | null = null;
@@ -16,10 +25,8 @@ let replacementFigurePosition: { x: number; y: number } | null = null;
 let wasReplaced = false;
 
 window.onload = async (): Promise<void> => {
-    await loadGameAssets();
-
     const app = new Application({
-        backgroundColor: 0x000000,
+        backgroundColor: 0x23344b,
         // width: gameWidth,
         // height: gameHeight,
         width: window.innerWidth,
@@ -33,14 +40,17 @@ window.onload = async (): Promise<void> => {
     // app.stage.scale.y = 1;
     document.body.appendChild(app.view);
 
+    await loadGameAssets(app);
+
     const sprite = getContainer();
 
     const videoElement = document.createElement("video");
-    videoElement.src = "./assets/video_2023-04-05_00-59-02.mp4";
+    videoElement.src = ASSETS.background;
     videoElement.autoplay = true;
     videoElement.loop = true;
     videoElement.muted = true;
     document.body.appendChild(videoElement);
+    console.log(videoElement);
 
     const videoTexture = Texture.from(videoElement);
 
@@ -67,21 +77,67 @@ window.onload = async (): Promise<void> => {
     // app.stage.interactive = true;
 };
 
-async function loadGameAssets(): Promise<void> {
+async function loadGameAssets(app): Promise<void> {
     return new Promise((res, rej) => {
         const loader = Loader.shared;
-        loader.add("rabbit", "./assets/simpleSpriteSheet.json");
-        loader.add("pixie", "./assets/spine-assets/pixie.json");
+        loader.add("background", ASSETS.background);
+        loader.add("container", ASSETS.container);
+        loader.add("fish", ASSETS.fish);
+        loader.add("boat", ASSETS.boat);
+        loader.add("mayak", ASSETS.mayak);
+        loader.add("star", ASSETS.star);
 
-        loader.onComplete.once(() => {
+        const loadingContainer = new Container();
+        app.stage.addChild(loadingContainer);
+        const text = new Text();
+        text.text = "0%";
+        text.position.set(window.innerWidth / 2 - text.width / 2, window.innerHeight / 2 - text.height / 2);
+        const progressBar = new Graphics();
+        loadingContainer.addChild(progressBar);
+        loadingContainer.addChild(text);
+
+        const barWidth = 400;
+        const barHeight = 20;
+        const barBorderColor = 0xffffff;
+        const barBorderWidth = 2;
+        const barBorderRadius = 50;
+
+        progressBar.drawRoundedRect(0, 0, barWidth, barHeight);
+        progressBar.lineStyle(barBorderWidth, barBorderColor, 1, 1);
+
+        progressBar.beginFill(0x38b7d8);
+        progressBar.drawRoundedRect(
+            0,
+            0,
+            barWidth - barBorderWidth * 2,
+            barHeight - barBorderWidth * 2,
+            barHeight / 2,
+            barBorderRadius - barHeight,
+        );
+        progressBar.endFill();
+
+        progressBar.position.set(window.innerWidth / 2 - barWidth / 2, window.innerHeight / 2 - barHeight / 2);
+        loader.onProgress.add((loader) => {
+            progressBar.width = (barWidth * loader.progress) / 100;
+            text.text = Math.round(loader.progress) + "%";
+        });
+
+        loader.onComplete.add(() => {
+            app.stage.removeChild(loadingContainer);
+            app.renderer.backgroundColor = 0x000000;
             res();
         });
 
-        loader.onError.once(() => {
+        loader.onError.add(() => {
             rej();
         });
 
         loader.load();
+
+        resizeEmitter.on("resize", (width, height) => {
+            text.position.set(width / 2 - text.width / 2, height / 2 - text.height / 2);
+            progressBar.position.set(width / 2 - barWidth / 2, height / 2 - barHeight / 2);
+        });
     });
 }
 
@@ -139,10 +195,10 @@ const arr: ("mayak" | "star" | "boat" | "fish")[][] = [
 ];
 
 const textureData = {
-    fish: "./assets/fish.png",
-    star: "./assets/star.png",
-    boat: "./assets/boat.png",
-    mayak: "./assets/mayak.png",
+    fish: ASSETS.fish,
+    star: ASSETS.star,
+    boat: ASSETS.boat,
+    mayak: ASSETS.mayak,
 };
 
 const getFigure = (
@@ -261,7 +317,7 @@ const getFigure = (
                 });
                 update();
             }
-        }
+        };
         update();
     }
 
@@ -363,7 +419,7 @@ const getFigure = (
 };
 
 const getContainer = () => {
-    const texture = Texture.from("./assets/FRAME.png");
+    const texture = Texture.from(ASSETS.container);
     const container = new Sprite(texture);
     container.anchor.set(0.5, 0.5);
     container.position.set(window.innerWidth / 2, window.innerHeight / 2);

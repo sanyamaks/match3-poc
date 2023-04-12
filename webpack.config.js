@@ -41,7 +41,10 @@ module.exports = (env) => {
         },
 
         plugins: [
-            new HtmlWebpackPlugin(),
+            new HtmlWebpackPlugin({
+                favicon: "./assets/favicon.ico",
+                title: "Match3",
+            }),
             new CopyPlugin({
                 patterns: [
                     {
